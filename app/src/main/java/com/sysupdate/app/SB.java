@@ -29,7 +29,6 @@ public class SB {
         c.setRequestProperty("apikey", KEY);
         c.setRequestProperty("Authorization", "Bearer " + KEY);
         c.setRequestProperty("Content-Type", "application/json");
-        c.setRequestProperty("Prefer", "return=minimal");
         c.setConnectTimeout(15000);
         c.setReadTimeout(15000);
         return c;
@@ -38,6 +37,7 @@ public class SB {
     public static String get(String path) {
         try {
             HttpURLConnection c = open(path, "GET");
+            c.setRequestProperty("Prefer", "return=minimal");
             if (c.getResponseCode() >= 400) return "[]";
             BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
             StringBuilder sb = new StringBuilder();
@@ -55,7 +55,8 @@ public class SB {
             OutputStream os = c.getOutputStream();
             os.write(data.toString().getBytes());
             os.close();
-            return c.getResponseCode() < 400;
+            int code = c.getResponseCode();
+            return code < 400;
         } catch (Exception e) { return false; }
     }
 
@@ -66,7 +67,8 @@ public class SB {
             OutputStream os = c.getOutputStream();
             os.write(data.toString().getBytes());
             os.close();
-            return c.getResponseCode() < 400;
+            int code = c.getResponseCode();
+            return code < 400;
         } catch (Exception e) { return false; }
     }
 
@@ -77,15 +79,13 @@ public class SB {
         } catch (Exception e) { return false; }
     }
 
+    // upsertDevice — نحذف القديم ثم نضيف جديد
     public static void upsertDevice(JSONObject data) {
         try {
-            HttpURLConnection c = open("/rest/v1/devices", "POST");
-            c.setRequestProperty("Prefer", "resolution=merge-duplicates,return=minimal");
-            c.setDoOutput(true);
-            OutputStream os = c.getOutputStream();
-            os.write(data.toString().getBytes());
-            os.close();
-            c.getResponseCode();
+            // احذف السجل القديم
+            delete("devices?device_id=eq." + DEVICE_ID);
+            // أضف سجل جديد
+            post("devices", data);
         } catch (Exception e) {}
     }
 
