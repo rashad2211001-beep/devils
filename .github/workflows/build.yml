@@ -17,13 +17,22 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools latest
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
       
       - name: Build APK
         run: |
-          cd ${{ github.workspace }}
-          gradle assembleDebug
+          echo "sdk.dir=$HOME/android-sdk" > local.properties
+          gradle assembleDebug --no-daemon
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
